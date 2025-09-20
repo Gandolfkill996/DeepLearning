@@ -1,0 +1,78 @@
+==============================
+Linear Regression Homework - Usage Guide
+==============================
+
+1. Environment Setup
+--------------------
+Please make sure Python >= 3.9 is installed (tested with Python 3.13).
+
+To install dependencies, run:
+    pip install -r requirements.txt
+
+or use the provided script:
+    ./install.sh
+
+Required dependencies:
+- numpy
+- pandas
+- scikit-learn==1.7.2
+- scipy
+- joblib
+
+2. Training the Model
+---------------------
+Run:
+    python Linear_regression.py
+
+This will:
+- Read and preprocess the dataset (cancer_reg-1.csv)
+- Train a Linear Regression model
+- Print evaluation metrics (MSE, R², Adjusted R²)
+- Save model and preprocessing objects:
+    linear_model.pkl
+    scaler.pkl
+    selected_features.pkl
+
+3. Testing / Prediction
+-----------------------
+In the same script, a function `test_model()` is provided.
+
+Usage in Python:
+    from Linear_regression import test_model
+
+    # Test on the original dataset
+    test_model()
+
+    # Test on a new dataset (must include all original features)
+    test_model("path/to/new_data.csv")
+
+Behavior:
+- If the dataset contains "TARGET_deathRate", metrics (MSE, R², Adjusted R²) will be reported.
+- If the dataset does NOT contain labels, the function will only output predictions.
+
+Predictions will be saved automatically in the same folder as the input data as:
+    predictions.csv
+
+4. Example Command
+------------------
+Train and evaluate on original dataset:
+    python Linear_regression.py
+
+Test on new dataset on windows:
+    python -c "from Linear_regression import test_model; test_model('new_dataset.csv')"
+Test on new dataset on Mac:
+    python3 -c "from Linear_regression import test_model; test_model('new_dataset.csv')"
+
+5. Output
+---------
+The prediction CSV file contains all original data columns plus:
+    Predicted_TARGET_deathRate
+
+Example:
+    Predicted_TARGET_deathRate
+    175.23
+    182.45
+    160.89
+    ...
+
+==============================
