@@ -91,6 +91,7 @@ def run_gridsearch(ModelClass, model_name="DNN"):
     # hyperparams
     dropout_probs = [0.5, 0.6, 0.7, 0.8, 0.9]
     optimizers = ["SGD", "Adam", "AdamW", "RMSprop", "Adagrad", "Adadelta", "ASGD", "Rprop", "LBFGS"]
+
     epochs_list = [10, 20, 30, 40, 50]
     batch_sizes = [8, 16, 32, 64, 128]
 
@@ -142,9 +143,9 @@ def test_model(ModelClass, model_name="DNN", new_data_path="cancer_reg-1.csv", m
     _, _, X_test, _, _, y_test = data.split_data()
 
     if model_path is None:
-        model_path = sorted([f for f in os.listdir('.') if f.startswith(f"best_{model_name}_model")])[-1]
+        model_path = sorted([f for f in os.listdir('..') if f.startswith(f"best_{model_name}_model")])[-1]
     if params_path is None:
-        params_path = sorted([f for f in os.listdir('.') if f.startswith(f"best_{model_name}_params")])[-1]
+        params_path = sorted([f for f in os.listdir('..') if f.startswith(f"best_{model_name}_params")])[-1]
 
     best_params = joblib.load(params_path)
     dropout, opt_name, epochs, batch = best_params
