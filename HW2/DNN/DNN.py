@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
-from sklearn.metrics import f1_score, roc_auc_score, roc_curve
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -187,6 +187,97 @@ def train_and_validate(model, optimizer, criterion, train_loader, val_loader, ep
     plt.savefig(f"{save_dir}/accuracy_curve.png")
     plt.close()
 
+def test_model(model_path, device, output_dir="outputs/test_eval"):
+    """
+    Load the trained DNN model and evaluate on 10% of MNIST test dataset.
+
+    Parameters
+    ----------
+    model_path : str
+        Path to the saved model (.pth file)
+    device : torch.device
+        Device to run evaluation (cuda, mps, or cpu)
+    output_dir : str
+        Directory to save ROC curve and metrics
+    """
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Load test dataset (only 10%)
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+    full_test = datasets.MNIST(root="../data", train=False, download=True, transform=transform)
+
+    subset_size = int(len(full_test) * 0.1)
+    test_subset, _ = torch.utils.data.random_split(full_test, [subset_size, len(full_test) - subset_size])
+
+    test_loader = torch.utils.data.DataLoader(test_subset, batch_size=64, shuffle=False)
+
+    # Define model structure (must match training)
+    class DNNModel(nn.Module):
+        def __init__(self):
+            super(DNNModel, self).__init__()
+            self.flatten = nn.Flatten()
+            self.fc1 = nn.Linear(28 * 28, 128)
+            self.fc2 = nn.Linear(128, 64)
+            self.fc3 = nn.Linear(64, 10)
+            self.relu = nn.ReLU()
+            self.dropout = nn.Dropout(0.3)
+
+        def forward(self, x):
+            x = self.flatten(x)
+            x = self.relu(self.fc1(x))
+            x = self.dropout(x)
+            x = self.relu(self.fc2(x))
+            x = self.fc3(x)
+            return x
+
+    # Load trained model
+    model = DNNModel().to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
+    y_true, y_pred, y_score = [], [], []
+
+    with torch.no_grad():
+        for xb, yb in test_loader:
+            xb, yb = xb.to(device), yb.to(device)
+            outputs = model(xb)
+            probs = torch.softmax(outputs, dim=1)
+            preds = torch.argmax(probs, dim=1)
+            y_true.extend(yb.cpu().numpy())
+            y_pred.extend(preds.cpu().numpy())
+            y_score.extend(probs.cpu().numpy())
+
+    # Compute metrics
+    acc = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred, average='weighted')
+    try:
+        auc = roc_auc_score(
+            torch.nn.functional.one_hot(torch.tensor(y_true), num_classes=10),
+            y_score,
+            average="macro",
+            multi_class="ovr"
+        )
+    except:
+        auc = float('nan')
+
+    print(f"✅ Test Results -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
+
+    # ROC curve for one-vs-rest of class 0
+    fpr, tpr, _ = roc_curve(
+        (torch.tensor(y_true) == 0).int(),
+        [s[0] for s in y_score]
+    )
+    plt.figure()
+    plt.plot(fpr, tpr, label=f"AUC = {auc:.4f}")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve (Class 0 vs Rest)")
+    plt.legend(loc="lower right")
+    plt.savefig(os.path.join(output_dir, "roc_curve.png"))
+    plt.close()
+
+    print(f"📊 ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
 
 # ==============================
 # 6. Main function

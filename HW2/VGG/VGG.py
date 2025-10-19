@@ -1,13 +1,13 @@
 
 import matplotlib
-matplotlib.use('Agg')  # ✅ Fix for macOS / Python 3.13 (no GUI backend)
+matplotlib.use('Agg')
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
-from sklearn.metrics import f1_score, roc_auc_score, roc_curve
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -192,6 +192,121 @@ def train_and_validate(model, optimizer, criterion, train_loader, val_loader, ep
     plt.savefig(f"{save_dir}/accuracy_curve.png")
     plt.close()
 
+def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, output_dir="outputs/test_eval"):
+    """
+    Load the trained VGG model and evaluate on 10% of the MNIST test dataset.
+
+    Parameters
+    ----------
+    model_path : str
+        Path to the saved model (.pth file)
+    device : torch.device
+        Device to run evaluation (cuda, mps, or cpu)
+    output_dir : str
+        Directory to save ROC curve and metrics
+    """
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else
+                              "mps" if torch.backends.mps.is_available() else "cpu")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    # ✅ Load test dataset (only 10%)
+    transform = transforms.Compose([
+        transforms.Resize((32, 32)),  # VGG expects 32x32 input
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+    full_test = datasets.MNIST(root="../data", train=False, download=True, transform=transform)
+
+    subset_size = int(len(full_test) * 0.1)
+    test_subset, _ = torch.utils.data.random_split(full_test, [subset_size, len(full_test) - subset_size])
+    test_loader = torch.utils.data.DataLoader(test_subset, batch_size=64, shuffle=False)
+
+    # ✅ Define VGG architecture (must match training)
+    class VGGNet(nn.Module):
+        def __init__(self):
+            super(VGGNet, self).__init__()
+            self.features = nn.Sequential(
+                nn.Conv2d(1, 64, 3, padding=1),
+                nn.ReLU(True),
+                nn.Conv2d(64, 64, 3, padding=1),
+                nn.ReLU(True),
+                nn.MaxPool2d(2, 2),
+
+                nn.Conv2d(64, 128, 3, padding=1),
+                nn.ReLU(True),
+                nn.Conv2d(128, 128, 3, padding=1),
+                nn.ReLU(True),
+                nn.MaxPool2d(2, 2),
+
+                nn.Conv2d(128, 256, 3, padding=1),
+                nn.ReLU(True),
+                nn.Conv2d(256, 256, 3, padding=1),
+                nn.ReLU(True),
+                nn.MaxPool2d(2, 2)
+            )
+            self.classifier = nn.Sequential(
+                nn.Linear(256 * 4 * 4, 512),
+                nn.ReLU(True),
+                nn.Dropout(0.5),
+                nn.Linear(512, 10)
+            )
+
+        def forward(self, x):
+            x = self.features(x)
+            x = x.view(-1, 256 * 4 * 4)
+            x = self.classifier(x)
+            return x
+
+    # ✅ Load trained model
+    model = VGGNet().to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
+    y_true, y_pred, y_score = [], [], []
+
+    # ✅ Evaluation
+    with torch.no_grad():
+        for xb, yb in test_loader:
+            xb, yb = xb.to(device), yb.to(device)
+            outputs = model(xb)
+            probs = torch.softmax(outputs, dim=1)
+            preds = torch.argmax(probs, dim=1)
+            y_true.extend(yb.cpu().numpy())
+            y_pred.extend(preds.cpu().numpy())
+            y_score.extend(probs.cpu().numpy())
+
+    # ✅ Compute metrics
+    acc = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred, average='weighted')
+    try:
+        auc = roc_auc_score(
+            torch.nn.functional.one_hot(torch.tensor(y_true), num_classes=10),
+            y_score,
+            average="macro",
+            multi_class="ovr"
+        )
+    except:
+        auc = float('nan')
+
+    print(f"✅ Test Results (lr=0.001) -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
+
+    # ✅ ROC curve for one-vs-rest of class 0
+    fpr, tpr, _ = roc_curve(
+        (torch.tensor(y_true) == 0).int(),
+        [s[0] for s in y_score]
+    )
+    plt.figure()
+    plt.plot(fpr, tpr, label=f"AUC = {auc:.4f}")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("VGG ROC Curve (Class 0 vs Rest, lr=0.001)")
+    plt.legend(loc="lower right")
+    plt.savefig(os.path.join(output_dir, "roc_curve.png"))
+    plt.close()
+
+    print(f"📊 ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
 
 # ==============================
 # 6. Main loop
