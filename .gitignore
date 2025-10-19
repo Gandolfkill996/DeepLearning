@@ -4,15 +4,3 @@
 # Dataset files
 HW2/data/
 HW2/data/MNIST/
-
-# Python cache
-__pycache__/
-*.pyc
-
-# Model outputs and logs
-outputs/
-logs/
-*.pth
-
-# Virtual environments
-venv/
