@@ -39,7 +39,7 @@ def run_linear_regression():
     n, p = X_test.shape
     adj_r2 = 1 - (1 - r2) * (n - 1) / (n - p - 1)
 
-    print("\n📊 Linear Regression Performance (Test Set):")
+    print("\n Linear Regression Performance (Test Set):")
     print(f"MSE: {mse:.4f}, R²: {r2:.4f}, Adjusted R²: {adj_r2:.4f}")
 
     # ---------------- Save artifacts ----------------

@@ -58,9 +58,9 @@ class Data:
 
         missing_ratio = df.isnull().mean()
 
-        # ========================
+
         # Case 1: Training data
-        # ========================
+
         if "TARGET_deathRate" in df.columns:
             corr_pvals = self.correlation_with_pvalues()
             keep_features = [
@@ -89,9 +89,9 @@ class Data:
 
             return self.X, self.y, corr_pvals
 
-        # ========================
+
         # Case 2: New data (no target)
-        # ========================
+
         else:
             keep_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
             self.selected_features = keep_features

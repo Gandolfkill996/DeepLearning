@@ -221,7 +221,7 @@ def run_gridsearch(ModelClass, model_name="DNN_30_16_8", device="cpu"):
                 global_best_params = (dropout, lr, epochs, batch)
                 global_best_model_state = best_model_state
                 global_best_history = history
-                print(f"🔥 New GLOBAL best! Val R²={best_r2:.4f}, Val MSE={best_val_mse:.4f}")
+                print(f"New GLOBAL best! Val R²={best_r2:.4f}, Val MSE={best_val_mse:.4f}")
 
         lr_results[lr] = (best_r2_lr, best_params_lr, best_history_lr["val_r2"][-1])
 
@@ -232,7 +232,7 @@ def run_gridsearch(ModelClass, model_name="DNN_30_16_8", device="cpu"):
     )
     results_path = os.path.join(model_dir, "results_log.csv")
     results_df.to_csv(results_path, index=False)
-    print(f"\n✅ Results saved to {results_path}")
+    print(f"\nResults saved to {results_path}")
 
     print("\n===== Best Results per Learning Rate =====")
     for lr, (r2, params, _) in lr_results.items():
@@ -252,9 +252,9 @@ def run_gridsearch(ModelClass, model_name="DNN_30_16_8", device="cpu"):
     # Print final best result (R² and corresponding MSE)
     best_val_r2 = global_best_r2
     best_val_mse = global_best_history["val_loss"][-1]
-    print(f"\n✅ Global best model saved: {global_best_params}")
-    print(f"   ↳ Best Val R²: {best_val_r2:.4f}")
-    print(f"   ↳ Corresponding Val MSE: {best_val_mse:.4f}")
+    print(f"\n Global best model saved: {global_best_params}")
+    print(f"     Best Val R²: {best_val_r2:.4f}")
+    print(f"     Corresponding Val MSE: {best_val_mse:.4f}")
 
     # Plot validation performance curve (MSE vs. epoch)
     plt.figure(figsize=(8, 5))
@@ -291,8 +291,8 @@ def test_model(ModelClass, model_name, new_data_path=None, model_path=None, para
     # 1) Resolve input CSV
     if new_data_path is None:
         new_data_path = os.path.join(base_dir, "cancer_reg-1.csv")
-    print(f"\n✅ Running test_model with {model_name} on {new_data_path}")
-    print(f"\n🔍 Testing model on: {new_data_path}")
+    print(f"\n Running test_model with {model_name} on {new_data_path}")
+    print(f"\n Testing model on: {new_data_path}")
 
     # 2) Load raw data with the same helper used in training
     data = Data(new_data_path, corr_threshold=0.2)  # class in Data_preprocess.py  :contentReference[oaicite:2]{index=2}
@@ -307,7 +307,7 @@ def test_model(ModelClass, model_name, new_data_path=None, model_path=None, para
     # Keep only features that exist in the new CSV
     features = [c for c in selected_features if c in df.columns]
     if not features:
-        raise ValueError("❌ None of the saved selected features are present in the new dataset!")
+        raise ValueError(" None of the saved selected features are present in the new dataset!")
 
     # 4) Subset & CLEAN: coerce to numeric, impute NaNs with column means
     Xdf = df[features].copy()
@@ -360,7 +360,7 @@ def test_model(ModelClass, model_name, new_data_path=None, model_path=None, para
     out_df = df.reset_index(drop=True).copy()
     out_df.insert(0, "Predicted_TARGET_deathRate", y_pred)  # first column
     out_df.to_csv(out_path, index=False)
-    print(f"✅ Predictions saved to: {out_path}")
+    print(f" Predictions saved to: {out_path}")
 
     # 10) If ground truth exists, report metrics
     if "TARGET_deathRate" in df.columns:
@@ -370,11 +370,11 @@ def test_model(ModelClass, model_name, new_data_path=None, model_path=None, para
         r2 = r2_score(y_true, y_pred)
         base_mse, base_r2 = baseline_metrics(y_true)  # from DNN_base.py  :contentReference[oaicite:4]{index=4}
 
-        print("\n📊 Model Performance:")
+        print("\n Model Performance:")
         print(f"MSE: {mse:.4f}, R²: {r2:.4f}")
         print(f"Baseline MSE: {base_mse:.4f}, Baseline R²: {base_r2:.4f}")
     else:
-        print("\n⚠️ No TARGET_deathRate column found. Skipping evaluation (MSE/R²).")
+        print("\n⚠ No TARGET_deathRate column found. Skipping evaluation (MSE/R²).")
 
 
 

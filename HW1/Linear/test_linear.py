@@ -11,10 +11,10 @@ def main():
     csv_path = sys.argv[1]
 
     if not os.path.exists(csv_path):
-        print(f"❌ Error: File not found at {csv_path}")
+        print(f" Error: File not found at {csv_path}")
         sys.exit(1)
 
-    print(f"\n✅ Running test_model (Linear Regression) on {csv_path}")
+    print(f"\n Running test_model (Linear Regression) on {csv_path}")
     test_model(csv_path)
 
 
