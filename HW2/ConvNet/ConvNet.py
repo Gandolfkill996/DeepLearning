@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# ==============================
+
 # 1. Dataset loading
-# ==============================
+
 def get_dataloaders(batch_size=128):
     """
     Load MNIST dataset from ../data and split into train/val/test loaders.
@@ -36,9 +36,9 @@ def get_dataloaders(batch_size=128):
     return train_loader, val_loader, test_loader
 
 
-# ==============================
+
 # 2. ConvNet model
-# ==============================
+
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
@@ -60,9 +60,9 @@ class ConvNet(nn.Module):
         return x, x1, x2
 
 
-# ==============================
+
 # 3. Evaluate model
-# ==============================
+
 def evaluate_model(model, test_loader, device='cpu', save_roc_path=None):
     model.eval()
     preds, labels, probs = [], [], []
@@ -98,9 +98,9 @@ def evaluate_model(model, test_loader, device='cpu', save_roc_path=None):
     return acc, f1, auc
 
 
-# ==============================
+
 # 4. Feature visualization
-# ==============================
+
 def visualize_features(model, test_loader, save_dir, device='cpu'):
     xb, _ = next(iter(test_loader))
     xb = xb.to(device)
@@ -125,9 +125,9 @@ def visualize_features(model, test_loader, save_dir, device='cpu'):
     plt.close()
 
 
-# ==============================
+
 # 5. Training loop
-# ==============================
+
 def train_and_validate(model, optimizer, criterion, train_loader, val_loader, epochs, device, save_dir):
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
 
@@ -194,7 +194,7 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    # ✅ Load test dataset (only 10%)
+    # Load test dataset (only 10%)
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
@@ -206,7 +206,7 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
 
     test_loader = torch.utils.data.DataLoader(test_subset, batch_size=64, shuffle=False)
 
-    # ✅ Define ConvNet architecture (same as used for training)
+    # Define ConvNet architecture (same as used for training)
     class ConvNet(nn.Module):
         def __init__(self):
             super(ConvNet, self).__init__()
@@ -227,7 +227,7 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
             x = self.fc2(x)
             return x
 
-    # ✅ Load trained model weights
+    # Load trained model weights
     model = ConvNet().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
@@ -244,7 +244,7 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
             y_pred.extend(preds.cpu().numpy())
             y_score.extend(probs.cpu().numpy())
 
-    # ✅ Calculate metrics
+    # Calculate metrics
     acc = accuracy_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred, average="weighted")
     try:
@@ -257,9 +257,9 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
     except:
         auc = float('nan')
 
-    print(f"✅ Test Results -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
+    print(f" Test Results -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
 
-    # ✅ Plot ROC curve for one-vs-rest of class 0
+    # Plot ROC curve for one-vs-rest of class 0
     fpr, tpr, _ = roc_curve(
         (torch.tensor(y_true) == 0).int(),
         [s[0] for s in y_score]
@@ -275,9 +275,9 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
 
     print(f"📊 ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
 
-# ==============================
+
 # 6. Main loop
-# ==============================
+
 if __name__ == "__main__":
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     train_loader, val_loader, test_loader = get_dataloaders()

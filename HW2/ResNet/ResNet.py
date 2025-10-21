@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# ==============================
+
 # 1. Dataset loading
-# ==============================
+
 def get_dataloaders(batch_size=128):
     transform = transforms.Compose([
         transforms.Resize((64, 64)),  # Resize MNIST (28x28) to 224x224 for ResNet
@@ -35,9 +35,9 @@ def get_dataloaders(batch_size=128):
     return train_loader, val_loader, test_loader
 
 
-# ==============================
+
 # 2. ResNet18 model (modified for MNIST)
-# ==============================
+
 class ResNet18(nn.Module):
     def __init__(self):
         super(ResNet18, self).__init__()
@@ -59,9 +59,9 @@ class ResNet18(nn.Module):
         return out, x1, x2
 
 
-# ==============================
+
 # 3. Evaluate model
-# ==============================
+
 def evaluate_model(model, test_loader, device='cuda', save_roc_path=None):
     model.eval()
     preds, labels, probs = [], [], []
@@ -97,9 +97,9 @@ def evaluate_model(model, test_loader, device='cuda', save_roc_path=None):
     return acc, f1, auc
 
 
-# ==============================
+
 # 4. Feature visualization
-# ==============================
+
 def visualize_features(model, test_loader, save_dir, device='cpu'):
     xb, _ = next(iter(test_loader))
     xb = xb.to(device)
@@ -123,9 +123,9 @@ def visualize_features(model, test_loader, save_dir, device='cpu'):
     plt.close()
 
 
-# ==============================
+
 # 5. Training loop
-# ==============================
+
 def train_and_validate(model, optimizer, criterion, train_loader, val_loader, epochs, device, save_dir):
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
 
@@ -196,7 +196,7 @@ def test_model(model_path="outputs/lr_0.001/best_resnet_lr0.001.pth", device=Non
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # ✅ Load test dataset (only 10%)
+    #  Load test dataset (only 10%)
     transform = transforms.Compose([
         transforms.Resize((224, 224)),  # ResNet expects 224x224 input
         transforms.ToTensor(),
@@ -208,7 +208,7 @@ def test_model(model_path="outputs/lr_0.001/best_resnet_lr0.001.pth", device=Non
     test_subset, _ = torch.utils.data.random_split(full_test, [subset_size, len(full_test) - subset_size])
     test_loader = torch.utils.data.DataLoader(test_subset, batch_size=32, shuffle=False)
 
-    # ✅ Define ResNet18 architecture (must match training)
+    #  Define ResNet18 architecture (must match training)
     class ResNet18Modified(nn.Module):
         def __init__(self):
             super(ResNet18Modified, self).__init__()
@@ -220,7 +220,7 @@ def test_model(model_path="outputs/lr_0.001/best_resnet_lr0.001.pth", device=Non
         def forward(self, x):
             return self.model(x)
 
-    # ✅ Load trained model
+    #  Load trained model
     model = ResNet18Modified().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
@@ -237,7 +237,7 @@ def test_model(model_path="outputs/lr_0.001/best_resnet_lr0.001.pth", device=Non
             y_pred.extend(preds.cpu().numpy())
             y_score.extend(probs.cpu().numpy())
 
-    # ✅ Calculate metrics
+    #  Calculate metrics
     acc = accuracy_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred, average='weighted')
     try:
@@ -250,9 +250,9 @@ def test_model(model_path="outputs/lr_0.001/best_resnet_lr0.001.pth", device=Non
     except:
         auc = float('nan')
 
-    print(f"✅ Test Results (ResNet, lr=0.001) -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
+    print(f" Test Results (ResNet, lr=0.001) -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
 
-    # ✅ ROC curve for one-vs-rest of class 0
+    #  ROC curve for one-vs-rest of class 0
     fpr, tpr, _ = roc_curve(
         (torch.tensor(y_true) == 0).int(),
         [s[0] for s in y_score]
@@ -268,9 +268,9 @@ def test_model(model_path="outputs/lr_0.001/best_resnet_lr0.001.pth", device=Non
 
     print(f"ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
 
-# ==============================
+
 # 6. Main loop
-# ==============================
+
 if __name__ == "__main__":
     # device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     train_loader, val_loader, test_loader = get_dataloaders()

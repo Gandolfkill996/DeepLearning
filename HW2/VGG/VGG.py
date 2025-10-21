@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# ==============================
+
 # 1. Dataset loading
-# ==============================
+
 def get_dataloaders(batch_size=128):
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -33,9 +33,9 @@ def get_dataloaders(batch_size=128):
     return train_loader, val_loader, test_loader
 
 
-# ==============================
+
 # 2. VGG-like model
-# ==============================
+
 class VGGNet(nn.Module):
     def __init__(self):
         super(VGGNet, self).__init__()
@@ -74,9 +74,9 @@ class VGGNet(nn.Module):
         return x, x1, x2
 
 
-# ==============================
+
 # 3. Evaluate model
-# ==============================
+
 def evaluate_model(model, test_loader, device='cpu', save_roc_path=None):
     model.eval()
     preds, labels, probs = [], [], []
@@ -112,9 +112,9 @@ def evaluate_model(model, test_loader, device='cpu', save_roc_path=None):
     return acc, f1, auc
 
 
-# ==============================
+
 # 4. Feature visualization
-# ==============================
+
 def visualize_features(model, test_loader, save_dir, device='cpu'):
     xb, _ = next(iter(test_loader))
     xb = xb.to(device)
@@ -138,9 +138,9 @@ def visualize_features(model, test_loader, save_dir, device='cpu'):
     plt.close()
 
 
-# ==============================
+
 # 5. Training loop
-# ==============================
+
 def train_and_validate(model, optimizer, criterion, train_loader, val_loader, epochs, device, save_dir):
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
 
@@ -211,7 +211,7 @@ def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, 
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # ✅ Load test dataset (only 10%)
+    #  Load test dataset (only 10%)
     transform = transforms.Compose([
         transforms.Resize((32, 32)),  # VGG expects 32x32 input
         transforms.ToTensor(),
@@ -223,7 +223,7 @@ def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, 
     test_subset, _ = torch.utils.data.random_split(full_test, [subset_size, len(full_test) - subset_size])
     test_loader = torch.utils.data.DataLoader(test_subset, batch_size=64, shuffle=False)
 
-    # ✅ Define VGG architecture (must match training)
+    #  Define VGG architecture (must match training)
     class VGGNet(nn.Module):
         def __init__(self):
             super(VGGNet, self).__init__()
@@ -259,14 +259,14 @@ def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, 
             x = self.classifier(x)
             return x
 
-    # ✅ Load trained model
+    #  Load trained model
     model = VGGNet().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     y_true, y_pred, y_score = [], [], []
 
-    # ✅ Evaluation
+    #  Evaluation
     with torch.no_grad():
         for xb, yb in test_loader:
             xb, yb = xb.to(device), yb.to(device)
@@ -277,7 +277,7 @@ def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, 
             y_pred.extend(preds.cpu().numpy())
             y_score.extend(probs.cpu().numpy())
 
-    # ✅ Compute metrics
+    #  Compute metrics
     acc = accuracy_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred, average='weighted')
     try:
@@ -290,9 +290,9 @@ def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, 
     except:
         auc = float('nan')
 
-    print(f"✅ Test Results (lr=0.001) -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
+    print(f" Test Results (lr=0.001) -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
 
-    # ✅ ROC curve for one-vs-rest of class 0
+    #  ROC curve for one-vs-rest of class 0
     fpr, tpr, _ = roc_curve(
         (torch.tensor(y_true) == 0).int(),
         [s[0] for s in y_score]
@@ -306,11 +306,11 @@ def test_model(model_path="outputs/lr_0.001/best_vgg_lr0.001.pth", device=None, 
     plt.savefig(os.path.join(output_dir, "roc_curve.png"))
     plt.close()
 
-    print(f"📊 ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
+    print(f" ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
 
-# ==============================
+
 # 6. Main loop
-# ==============================
+
 if __name__ == "__main__":
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     train_loader, val_loader, test_loader = get_dataloaders()

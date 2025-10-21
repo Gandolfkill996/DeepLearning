@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# ==============================
+
 # 1. Dataset loading
-# ==============================
+
 def get_dataloaders(batch_size=128):
     """
     Load MNIST dataset from ../data and split into train/val/test loaders.
@@ -39,9 +39,9 @@ def get_dataloaders(batch_size=128):
     return train_loader, val_loader, test_loader
 
 
-# ==============================
+
 # 2. DNN model
-# ==============================
+
 class DNN(nn.Module):
     def __init__(self):
         super(DNN, self).__init__()
@@ -63,9 +63,9 @@ class DNN(nn.Module):
         return x4, x1, x2
 
 
-# ==============================
+
 # 3. Evaluation function
-# ==============================
+
 def evaluate_model(model, test_loader, device='cpu', save_roc_path=None):
     """
     Evaluate model performance on test dataset and optionally save ROC curve.
@@ -105,9 +105,9 @@ def evaluate_model(model, test_loader, device='cpu', save_roc_path=None):
     return acc, f1, auc
 
 
-# ==============================
+
 # 4. Feature visualization
-# ==============================
+
 def visualize_features(model, test_loader, save_dir, device='cpu'):
     """
     Visualize the first and second layer features of the model.
@@ -133,9 +133,9 @@ def visualize_features(model, test_loader, save_dir, device='cpu'):
     plt.close()
 
 
-# ==============================
+
 # 5. Training loop
-# ==============================
+
 def train_and_validate(model, optimizer, criterion, train_loader, val_loader, epochs, device, save_dir):
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
 
@@ -261,7 +261,7 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
     except:
         auc = float('nan')
 
-    print(f"✅ Test Results -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
+    print(f" Test Results -> Accuracy: {acc:.4f}, F1: {f1:.4f}, AUC: {auc:.4f}")
 
     # ROC curve for one-vs-rest of class 0
     fpr, tpr, _ = roc_curve(
@@ -279,9 +279,9 @@ def test_model(model_path, device, output_dir="outputs/test_eval"):
 
     print(f"📊 ROC curve saved to {os.path.join(output_dir, 'roc_curve.png')}")
 
-# ==============================
+
 # 6. Main function
-# ==============================
+
 if __name__ == "__main__":
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     train_loader, val_loader, test_loader = get_dataloaders()
