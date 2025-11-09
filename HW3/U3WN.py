@@ -6,6 +6,7 @@ import numpy as np
 import os
 from tqdm import tqdm
 
+
 # ======== 1. DoubleConv without BatchNorm ========
 class DoubleConv_noBN(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -14,15 +15,15 @@ class DoubleConv_noBN(nn.Module):
             nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
         return self.conv(x)
 
 
-# ======== 2. U-Net 2-blocks (no BN) ========
-class UNet_2block_noBN(nn.Module):
+# ======== 2. U-Net 3-blocks (no BN) ========
+class UNet_3block_noBN(nn.Module):
     def __init__(self, in_channels=3, out_channels=1):
         super().__init__()
         # Encoder
@@ -30,36 +31,49 @@ class UNet_2block_noBN(nn.Module):
         self.pool1 = nn.MaxPool2d(2)
         self.down2 = DoubleConv_noBN(64, 128)
         self.pool2 = nn.MaxPool2d(2)
+        self.down3 = DoubleConv_noBN(128, 256)
+        self.pool3 = nn.MaxPool2d(2)
 
-        # Bridge (bottleneck)
-        self.bridge = DoubleConv_noBN(128, 256)
+        # Bridge
+        self.bridge = DoubleConv_noBN(256, 512)
 
         # Decoder
-        self.up1 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
-        self.conv1 = DoubleConv_noBN(256, 128)
-        self.up2 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.conv2 = DoubleConv_noBN(128, 64)
+        self.up1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.conv1 = DoubleConv_noBN(512, 256)
+        self.up2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.conv2 = DoubleConv_noBN(256, 128)
+        self.up3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.conv3 = DoubleConv_noBN(128, 64)
 
         # Output
         self.final = nn.Conv2d(64, out_channels, kernel_size=1)
 
     def forward(self, x):
+        # Encoder
         c1 = self.down1(x)
         p1 = self.pool1(c1)
         c2 = self.down2(p1)
         p2 = self.pool2(c2)
+        c3 = self.down3(p2)
+        p3 = self.pool3(c3)
 
-        bridge = self.bridge(p2)
+        # Bridge
+        bridge = self.bridge(p3)
 
+        # Decoder
         u1 = self.up1(bridge)
-        u1 = torch.cat([u1, c2], dim=1)
-        c3 = self.conv1(u1)
+        u1 = torch.cat([u1, c3], dim=1)
+        c4 = self.conv1(u1)
 
-        u2 = self.up2(c3)
-        u2 = torch.cat([u2, c1], dim=1)
-        c4 = self.conv2(u2)
+        u2 = self.up2(c4)
+        u2 = torch.cat([u2, c2], dim=1)
+        c5 = self.conv2(u2)
 
-        out = self.final(c4)
+        u3 = self.up3(c5)
+        u3 = torch.cat([u3, c1], dim=1)
+        c6 = self.conv3(u3)
+
+        out = self.final(c6)
         return torch.sigmoid(out)
 
 
@@ -104,7 +118,7 @@ class RetinaDataset(Dataset):
 # ======== 5. Train ========
 def train_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet_2block_noBN().to(device)
+    model = UNet_3block_noBN().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.BCELoss()
 
@@ -134,16 +148,16 @@ def train_model():
 
         if dice > best_dice:
             best_dice = dice
-            torch.save(model.state_dict(), "best_unet2_noBN.pth")
+            torch.save(model.state_dict(), "best_unet3_noBN.pth")
             print(f"✅ New best Dice = {best_dice:.4f}")
 
     print("Training done. Best Dice:", best_dice)
 
 
 # ======== 6. Test ========
-def test_model(model_path="best_unet2_noBN.pth"):
+def test_model(model_path="best_unet3_noBN.pth"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet_2block_noBN().to(device)
+    model = UNet_3block_noBN().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
@@ -169,5 +183,5 @@ def test_model(model_path="best_unet2_noBN.pth"):
 if __name__ == "__main__":
     train_model()
     # After training:
-    # test_model("best_unet2_noBN.pth")
+    # test_model("best_unet3_noBN.pth")
 
