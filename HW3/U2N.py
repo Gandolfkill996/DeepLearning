@@ -15,10 +15,10 @@ class DoubleConv(nn.Module):
         super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_ch),       # ← normalization
+            nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_ch),       # ← normalization
+            nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True)
         )
 
@@ -178,7 +178,7 @@ def test_model(model_path="best_unet2_withBN.pth"):
 
 
 if __name__ == "__main__":
-    train_model()
+    # train_model()
     # After training:
-    # test_model("best_unet2_withBN.pth")
+    test_model("best_unet2_withBN.pth")
 
