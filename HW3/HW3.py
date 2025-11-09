@@ -164,7 +164,7 @@ def train_model():
         print(f"Dice: {dice:.4f}")
         if dice > best_dice:
             best_dice = dice
-            torch.save(model.state_dict(), "best_unet.pth")
+            torch.save(model.state_dict(), "best_unet2_withBN.pth")
 
     print("Training completed. Best Dice:", best_dice)
 
@@ -172,7 +172,7 @@ def train_model():
 # ======================
 # 5. Test Model
 # ======================
-def test_model(model_path="best_unet.pth"):
+def test_model(model_path="best_unet2_withBN.pth"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -203,4 +203,4 @@ def test_model(model_path="best_unet.pth"):
 if __name__ == "__main__":
     train_model()
     # After training, run:
-    # test_model("best_unet.pth")
+    # test_model("best_unet2_withBN.pth")
