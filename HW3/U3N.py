@@ -184,7 +184,7 @@ def test_model(model_path="best_unet3_withBN.pth"):
 
 
 if __name__ == "__main__":
-    train_model()
+    # train_model()
     # After training:
-    # test_model("best_unet3_withBN.pth")
+    test_model("best_unet3_withBN.pth")
 
